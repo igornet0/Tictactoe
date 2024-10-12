@@ -159,15 +159,65 @@ int checkWin(Cell player) {
     return 0;
 }
 
-// Функция для хода ИИ (случайное размещение "O" на пустом месте)
+// Функция для хода компьютера
 void aiMove() {
-    int x, y;
-    do {
-        x = rand() % MAX_SIZE;
-        y = rand() % MAX_SIZE;
-    } while (board[y][x] != EMPTY);
-    
-    board[y][x] = PLAYER_O;
+    // Переменные для хранения лучшего хода
+    int bestX = -1, bestY = -1;
+    int maxAdjacent = -1;
+
+    // Проходим по всему полю, чтобы найти наилучший ход
+    for (int i = 0; i < MAX_SIZE; i++) {
+        for (int j = 0; j < MAX_SIZE; j++) {
+            // Ищем пустую клетку, чтобы проверить, сколько рядом занятых клеток
+            if (board[i][j] == EMPTY) {
+                int adjacentPlayerX = 0;
+                int adjacentPlayerO = 0;
+
+                // Проверяем соседние клетки вокруг текущей
+                for (int di = -1; di <= 1; di++) {
+                    for (int dj = -1; dj <= 1; dj++) {
+                        if (di == 0 && dj == 0) continue; // Пропускаем саму клетку
+                        int ni = i + di;
+                        int nj = j + dj;
+
+                        // Проверяем, не выходит ли соседняя клетка за границы поля
+                        if (ni >= 0 && ni < MAX_SIZE && nj >= 0 && nj < MAX_SIZE) {
+                            if (board[ni][nj] == PLAYER_X) {
+                                adjacentPlayerX++;
+                            } else if (board[ni][nj] == PLAYER_O) {
+                                adjacentPlayerO++;
+                            }
+                        }
+                    }
+                }
+
+                // Оцениваем ход: если клетка рядом с игроком, это потенциальный лучший ход
+                if (adjacentPlayerX > maxAdjacent) {
+                    maxAdjacent = adjacentPlayerX;
+                    bestX = j;
+                    bestY = i;
+                } else if (adjacentPlayerX == maxAdjacent && adjacentPlayerO > 0) {
+                    // Если есть одинаковое количество соседних X, предпочитаем клетку рядом с O
+                    bestX = j;
+                    bestY = i;
+                }
+            }
+        }
+    }
+
+    // Если найден лучший ход, делаем его
+    if (bestX != -1 && bestY != -1) {
+        board[bestY][bestX] = PLAYER_O;
+    } else {
+        // Если не нашли подходящий ход, делаем случайный (на случай ошибки или заполненности)
+        int x, y;
+        do {
+            x = rand() % MAX_SIZE;
+            y = rand() % MAX_SIZE;
+        } while (board[y][x] != EMPTY);
+
+        board[y][x] = PLAYER_O;
+    }
 }
 
 int main(int argc, char* argv[]) {
