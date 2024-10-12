@@ -161,63 +161,43 @@ int checkWin(Cell player) {
 
 // Функция для хода компьютера
 void aiMove() {
-    // Переменные для хранения лучшего хода
     int bestX = -1, bestY = -1;
-    int maxAdjacentX = -1;
-    int maxAdjacentO = -1;
 
-    // Проходим по всему полю, чтобы найти наилучший ход
+    // Сначала ищем возможность выиграть
     for (int i = 0; i < MAX_SIZE; i++) {
         for (int j = 0; j < MAX_SIZE; j++) {
-            // Ищем пустую клетку
             if (board[i][j] == EMPTY) {
-                int adjacentPlayerX = 0;
-                int adjacentPlayerO = 0;
-
-                // Проверяем соседние клетки вокруг текущей
-                for (int di = -1; di <= 1; di++) {
-                    for (int dj = -1; dj <= 1; dj++) {
-                        if (di == 0 && dj == 0) continue; // Пропускаем саму клетку
-                        int ni = i + di;
-                        int nj = j + dj;
-
-                        // Проверяем, не выходит ли соседняя клетка за границы поля
-                        if (ni >= 0 && ni < MAX_SIZE && nj >= 0 && nj < MAX_SIZE) {
-                            if (board[ni][nj] == PLAYER_X) {
-                                adjacentPlayerX++;
-                            } else if (board[ni][nj] == PLAYER_O) {
-                                adjacentPlayerO++;
-                            }
-                        }
-                    }
-                }
-
-                // Оцениваем ход
-                if (adjacentPlayerX > maxAdjacentX) {
-                    maxAdjacentX = adjacentPlayerX;
+                if (canWin(j, i, PLAYER_O)) {
                     bestX = j;
                     bestY = i;
-                } else if (adjacentPlayerX == maxAdjacentX && adjacentPlayerO < maxAdjacentO) {
-                    // Предпочитаем клетку, если она рядом с меньшим количеством O
-                    bestX = j;
-                    bestY = i;
+                    goto move; // Найден победный ход
                 }
             }
         }
     }
 
-    // Если найден лучший ход, делаем его
+    // Затем блокируем игрока
+    for (int i = 0; i < MAX_SIZE; i++) {
+        for (int j = 0; j < MAX_SIZE; j++) {
+            if (board[i][j] == EMPTY) {
+                if (canWin(j, i, PLAYER_X)) {
+                    bestX = j;
+                    bestY = i;
+                    goto move; // Найден блокирующий ход
+                }
+            }
+        }
+    }
+
+    // Если не нашли ни того, ни другого, делаем случайный ход
+    do {
+        bestX = rand() % MAX_SIZE;
+        bestY = rand() % MAX_SIZE;
+    } while (board[bestY][bestX] != EMPTY);
+
+move:
     if (bestX != -1 && bestY != -1) {
         board[bestY][bestX] = PLAYER_O;
-    } else {
-        // Если не нашли подходящий ход, делаем случайный
-        int x, y;
-        do {
-            x = rand() % MAX_SIZE;
-            y = rand() % MAX_SIZE;
-        } while (board[y][x] != EMPTY);
-
-        board[y][x] = PLAYER_O;
     }
 }
 
