@@ -166,74 +166,74 @@ int checkWin(Cell player) {
     return 0;
 }
 
-// Функция для оценки позиции
-int evaluatePosition(int x, int y, char player) {
-    int score = 0;
-
-    // Проверка в 8 направлениях
-    for (int dx = -1; dx <= 1; dx++) {
-        for (int dy = -1; dy <= 1; dy++) {
-            if (dx == 0 && dy == 0) continue;
-
-            int count = 1; // Считаем текущую клетку
-            int openEnds = 0; // Считаем открытые концы
-
-            // Считаем в одном направлении
-            for (int step = 1; step < 5; step++) {
-                int nx = x + dx * step;
-                int ny = y + dy * step;
-                if (nx >= 0 && nx < MAX_SIZE && ny >= 0 && ny < MAX_SIZE) {
-                    if (board[ny][nx] == player) {
-                        count++;
-                    } else if (board[ny][nx] == EMPTY) {
-                        openEnds++;
-                        break; // Найдено открытое окончание
-                    } else {
-                        break; // Препятствие
-                    }
-                }
-            }
-
-            // Считаем в противоположном направлении
-            for (int step = 1; step < 5; step++) {
-                int nx = x - dx * step;
-                int ny = y - dy * step;
-                if (nx >= 0 && nx < MAX_SIZE && ny >= 0 && ny < MAX_SIZE) {
-                    if (board[ny][nx] == player) {
-                        count++;
-                    } else if (board[ny][nx] == EMPTY) {
-                        openEnds++;
-                        break; // Найдено открытое окончание
-                    } else {
-                        break; // Препятствие
-                    }
-                }
-            }
-
-            // Оценка позиции на основе количества символов и открытых концов
-            if (count >= 5) {
-                return 1000; // Выигрышная позиция
-            } else if (count == 4 && openEnds > 0) {
-                score += 100; // Очень сильная позиция
-            } else if (count == 3 && openEnds > 0) {
-                score += 10; // Умеренная позиция
-            }
+int checkWin(char player) {
+    // Проверка всех выигрышных комбинаций
+    for (int i = 0; i < MAX_SIZE; i++) {
+        if ((board[i][0] == player && board[i][1] == player && board[i][2] == player) ||
+            (board[0][i] == player && board[1][i] == player && board[2][i] == player)) {
+            return 1;
         }
     }
-
-    return score;
+    if ((board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
+        (board[0][2] == player && board[1][1] == player && board[2][0] == player)) {
+        return 1;
+    }
+    return 0;
 }
 
-// Основная функция для хода ИИ
-void aiMove() {
-    int bestX = -1, bestY = -1;
-    int bestScore = -1;
-
-    // Оценка всех возможных ходов
+int minimax(int depth, int isMaximizing) {
+    if (checkWin(PLAYER_O)) return 10 - depth; // Оценка для ИИ
+    if (checkWin(PLAYER_X)) return depth - 10; // Оценка для игрока
+    int isDraw = 1;
     for (int i = 0; i < MAX_SIZE; i++) {
         for (int j = 0; j < MAX_SIZE; j++) {
             if (board[i][j] == EMPTY) {
-                int score = evaluatePosition(j, i, PLAYER_O);
+                isDraw = 0;
+                break;
+            }
+        }
+    }
+    if (isDraw) return 0; // Ничья
+
+    if (isMaximizing) {
+        int bestScore = -1000;
+        for (int i = 0; i < MAX_SIZE; i++) {
+            for (int j = 0; j < MAX_SIZE; j++) {
+                if (board[i][j] == EMPTY) {
+                    board[i][j] = PLAYER_O;
+                    int score = minimax(depth + 1, 0);
+                    board[i][j] = EMPTY;
+                    bestScore = (score > bestScore) ? score : bestScore;
+                }
+            }
+        }
+        return bestScore;
+    } else {
+        int bestScore = 1000;
+        for (int i = 0; i < MAX_SIZE; i++) {
+            for (int j = 0; j < MAX_SIZE; j++) {
+                if (board[i][j] == EMPTY) {
+                    board[i][j] = PLAYER_X;
+                    int score = minimax(depth + 1, 1);
+                    board[i][j] = EMPTY;
+                    bestScore = (score < bestScore) ? score : bestScore;
+                }
+            }
+        }
+        return bestScore;
+    }
+}
+
+void aiMove() {
+    int bestX = -1, bestY = -1;
+    int bestScore = -1000;
+
+    for (int i = 0; i < MAX_SIZE; i++) {
+        for (int j = 0; j < MAX_SIZE; j++) {
+            if (board[i][j] == EMPTY) {
+                board[i][j] = PLAYER_O;
+                int score = minimax(0, 0);
+                board[i][j] = EMPTY;
                 if (score > bestScore) {
                     bestScore = score;
                     bestX = j;
@@ -243,7 +243,6 @@ void aiMove() {
         }
     }
 
-    // Если лучший ход найден, делаем его
     if (bestX != -1 && bestY != -1) {
         board[bestY][bestX] = PLAYER_O;
     }
