@@ -19,13 +19,14 @@ Cell board[MAX_SIZE][MAX_SIZE];
 int cameraX = 0; // Положение камеры по X
 int cameraY = 0; // Положение камеры по Y
 
+// Функция инициализации игрового поля, заполняет все клетки значением EMPTY
 void initBoard() {
     for (int i = 0; i < MAX_SIZE; i++)
         for (int j = 0; j < MAX_SIZE; j++)
             board[i][j] = EMPTY;
 }
 
-
+// Функция отображения текста на экране с использованием SDL_ttf
 void renderText(SDL_Renderer* renderer, const char* message, int x, int y, SDL_Color color) {
     TTF_Font* font = TTF_OpenFont("arial.ttf", 24);
     if (!font) {
@@ -44,23 +45,20 @@ void renderText(SDL_Renderer* renderer, const char* message, int x, int y, SDL_C
     TTF_CloseFont(font);
 }
 
+// Функция для отображения сообщения в диалоговом окне с кнопками "Закрыть" и "Снова"
 void drawMessageBox(SDL_Renderer* renderer, const char* message) {
     SDL_Color bgColor = {255, 255, 255, 255}; // Белый фон окна
     SDL_Color textColor = {0, 0, 0, 255}; // Черный цвет текста
 
-    // Устанавливаем цвет и рисуем прямоугольник в центре экрана
     SDL_SetRenderDrawColor(renderer, bgColor.r, bgColor.g, bgColor.b, bgColor.a);
-    SDL_Rect messageRect = {WINDOW_WIDTH * 50 / 4, WINDOW_HEIGHT * 50 / 3, WINDOW_WIDTH * 50 / 2, 150};
+    SDL_Rect messageRect = {WINDOW_WIDTH / 4, WINDOW_HEIGHT / 3, WINDOW_WIDTH / 2, 150};
     SDL_RenderFillRect(renderer, &messageRect);
 
-    // Рисуем рамку вокруг прямоугольника
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderDrawRect(renderer, &messageRect);
 
-    // Отрисовываем текст в центре прямоугольника
     renderText(renderer, message, messageRect.x + 10, messageRect.y + 20, textColor);
 
-    // Рисуем кнопки "Закрыть" и "Снова"
     SDL_Rect closeButton = {messageRect.x + 10, messageRect.y + 70, 100, 40};
     SDL_Rect retryButton = {messageRect.x + messageRect.w - 110, messageRect.y + 70, 100, 40};
 
@@ -73,13 +71,12 @@ void drawMessageBox(SDL_Renderer* renderer, const char* message) {
     renderText(renderer, "Retry", retryButton.x + 10, retryButton.y + 10, textColor);
 }
 
-
 // Проверка, был ли клик внутри прямоугольника
 int isClickInsideRect(SDL_Rect rect, int x, int y) {
     return (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h);
 }
 
-
+// Функция проверки ничьей - проверяет, заполнены ли все клетки
 int checkDraw() {
     for (int i = 0; i < MAX_SIZE; i++) {
         for (int j = 0; j < MAX_SIZE; j++) {
@@ -91,28 +88,23 @@ int checkDraw() {
     return 1; // Все клетки заполнены, ничья.
 }
 
-
+// Функция отрисовки видимой части игрового поля с учетом камеры
 void drawBoard(SDL_Renderer* renderer) {
-    // Устанавливаем цвет линий сетки
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-    // Вычисляем видимые границы на экране
     int startX = cameraX / CELL_SIZE;
     int startY = cameraY / CELL_SIZE;
     int endX = (cameraX + WINDOW_WIDTH) / CELL_SIZE + 1;
     int endY = (cameraY + WINDOW_HEIGHT) / CELL_SIZE + 1;
 
-    // Рисуем видимые клетки поля
     for (int i = startY; i <= endY; i++) {
         for (int j = startX; j <= endX; j++) {
             int x = j * CELL_SIZE - cameraX;
             int y = i * CELL_SIZE - cameraY;
 
-            // Рисуем границы клетки
             SDL_Rect cellRect = { x, y, CELL_SIZE, CELL_SIZE };
             SDL_RenderDrawRect(renderer, &cellRect);
 
-            // Рисуем X и O в клетках
             if (board[i][j] == PLAYER_X) {
                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
                 SDL_RenderDrawLine(renderer, x + 10, y + 10, x + CELL_SIZE - 10, y + CELL_SIZE - 10);
@@ -129,35 +121,34 @@ void drawBoard(SDL_Renderer* renderer) {
     }
 }
 
-
+// Функция проверки победы - проверяет горизонтальные, вертикальные и диагональные линии
 int checkWin(Cell player) {
-    // Check horizontal, vertical and diagonal for winning condition
-    for (int i = 0; i < WINDOW_HEIGHT; i++) {
-        for (int j = 0; j < WINDOW_WIDTH; j++) {
+    for (int i = 0; i < MAX_SIZE; i++) {
+        for (int j = 0; j < MAX_SIZE; j++) {
             if (board[i][j] == player) {
-                // Check horizontal
-                if (j <= WINDOW_WIDTH - WINNING_LENGTH && 
+                // Проверка горизонтали
+                if (j <= MAX_SIZE - WINNING_LENGTH &&
                     board[i][j + 1] == player && 
                     board[i][j + 2] == player && 
                     board[i][j + 3] == player && 
                     board[i][j + 4] == player) return 1;
                 
-                // Check vertical
-                if (i <= WINDOW_HEIGHT - WINNING_LENGTH && 
+                // Проверка вертикали
+                if (i <= MAX_SIZE - WINNING_LENGTH &&
                     board[i + 1][j] == player && 
                     board[i + 2][j] == player && 
                     board[i + 3][j] == player && 
                     board[i + 4][j] == player) return 1;
 
-                // Check diagonal 
-                if (i <= WINDOW_HEIGHT - WINNING_LENGTH && j <= WINDOW_WIDTH - WINNING_LENGTH &&
+                // Проверка диагонали \
+                if (i <= MAX_SIZE - WINNING_LENGTH && j <= MAX_SIZE - WINNING_LENGTH &&
                     board[i + 1][j + 1] == player && 
                     board[i + 2][j + 2] == player && 
                     board[i + 3][j + 3] == player && 
                     board[i + 4][j + 4] == player) return 1;
 
-                // Check diagonal /
-                if (i >= WINNING_LENGTH - 1 && j <= WINDOW_WIDTH - WINNING_LENGTH &&
+                // Проверка диагонали /
+                if (i >= WINNING_LENGTH - 1 && j <= MAX_SIZE - WINNING_LENGTH &&
                     board[i - 1][j + 1] == player && 
                     board[i - 2][j + 2] == player && 
                     board[i - 3][j + 3] == player && 
@@ -168,31 +159,36 @@ int checkWin(Cell player) {
     return 0;
 }
 
+// Функция для хода ИИ (случайное размещение "O" на пустом месте)
 void aiMove() {
     int x, y;
     do {
-        x = rand() % WINDOW_HEIGHT;
-        y = rand() % WINDOW_WIDTH;
-    } while (board[x][y] != EMPTY);
+        x = rand() % MAX_SIZE;
+        y = rand() % MAX_SIZE;
+    } while (board[y][x] != EMPTY);
     
-    board[x][y] = PLAYER_O;
+    board[y][x] = PLAYER_O;
 }
 
 int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
-    TTF_Init(); // Инициализация TTF для отображения текста
+    TTF_Init();
     SDL_Window* window = SDL_CreateWindow("Infinite Tic Tac Toe", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1,SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     initBoard();
     
     int running = 1;
+    int gameOver = 0;
     Cell currentPlayer = PLAYER_X;
+    char message[50] = "";
 
     while (running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) running = 0;
+            if (event.type == SDL_QUIT) {
+                running = 0;
+            }
 
             // Обработка стрелок для перемещения камеры
             if (event.type == SDL_KEYDOWN) {
@@ -209,25 +205,70 @@ int main(int argc, char* argv[]) {
             }
 
             // Обработка кликов мыши для размещения X или O
-            if (event.type == SDL_MOUSEBUTTONDOWN) {
+            if (event.type == SDL_MOUSEBUTTONDOWN && !gameOver) {
                 int x = (event.button.x + cameraX) / CELL_SIZE;
                 int y = (event.button.y + cameraY) / CELL_SIZE;
 
                 if (board[y][x] == EMPTY) {
                     board[y][x] = currentPlayer;
-                    currentPlayer = (currentPlayer == PLAYER_X) ? PLAYER_O : PLAYER_X;
+
+                    // Проверка на победу и переключение игрока
+                    if (checkWin(currentPlayer)) {
+                        snprintf(message, sizeof(message), "Player %c wins!", currentPlayer == PLAYER_X ? 'X' : 'O');
+                        gameOver = 1;
+                    } else if (checkDraw()) {
+                        snprintf(message, sizeof(message), "It's a draw!");
+                        gameOver = 1;
+                    } else {
+                        currentPlayer = (currentPlayer == PLAYER_X) ? PLAYER_O : PLAYER_X;
+
+                        if (currentPlayer == PLAYER_O) {
+                            aiMove();
+                            if (checkWin(PLAYER_O)) {
+                                snprintf(message, sizeof(message), "Player O wins!");
+                                gameOver = 1;
+                            } else if (checkDraw()) {
+                                snprintf(message, sizeof(message), "It's a draw!");
+                                gameOver = 1;
+                            }
+                            currentPlayer = PLAYER_X;
+                        }
+                    }
+                }
+            }
+
+            // Обработка нажатий на кнопки "Закрыть" и "Снова" в диалоговом окне
+            if (gameOver && event.type == SDL_MOUSEBUTTONDOWN) {
+                int mouseX = event.button.x;
+                int mouseY = event.button.y;
+
+                SDL_Rect closeButton = {WINDOW_WIDTH / 4 + 10, WINDOW_HEIGHT / 3 + 70, 100, 40};
+                SDL_Rect retryButton = {WINDOW_WIDTH / 4 + WINDOW_WIDTH / 2 - 110, WINDOW_HEIGHT / 3 + 70, 100, 40};
+
+                if (isClickInsideRect(closeButton, mouseX, mouseY)) {
+                    running = 0; // Закрываем игру
+                } else if (isClickInsideRect(retryButton, mouseX, mouseY)) {
+                    initBoard(); // Сбросить поле
+                    gameOver = 0; // Сбросить состояние игры
+                    snprintf(message, sizeof(message), "");
                 }
             }
         }
 
-        // Отрисовка
+        // Отрисовка игрового поля и сообщений
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
         
         drawBoard(renderer);
 
+        if (gameOver) {
+            drawMessageBox(renderer, message);
+        }
+
         SDL_RenderPresent(renderer);
     }
+
+    // Очистка ресурсов и завершение работы SDL
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     TTF_Quit();
