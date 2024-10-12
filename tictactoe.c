@@ -49,7 +49,7 @@ void drawMessageBox(SDL_Renderer* renderer, const char* message) {
 
     // Устанавливаем цвет и рисуем прямоугольник в центре экрана
     SDL_SetRenderDrawColor(renderer, bgColor.r, bgColor.g, bgColor.b, bgColor.a);
-    SDL_Rect messageRect = {width * 50 / 4, height * 50 / 3, width * 50 / 2, 150};
+    SDL_Rect messageRect = {WINDOW_WIDTH * 50 / 4, WINDOW_HEIGHT * 50 / 3, WINDOW_WIDTH * 50 / 2, 150};
     SDL_RenderFillRect(renderer, &messageRect);
 
     // Рисуем рамку вокруг прямоугольника
@@ -80,8 +80,8 @@ int isClickInsideRect(SDL_Rect rect, int x, int y) {
 
 
 int checkDraw() {
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
+    for (int i = 0; i < MAX_SIZE; i++) {
+        for (int j = 0; j < MAX_SIZE; j++) {
             if (board[i][j] == EMPTY) {
                 return 0; // Есть пустая клетка, продолжаем игру.
             }
@@ -89,7 +89,6 @@ int checkDraw() {
     }
     return 1; // Все клетки заполнены, ничья.
 }
-
 
 
 void drawBoard(SDL_Renderer* renderer) {
@@ -132,32 +131,32 @@ void drawBoard(SDL_Renderer* renderer) {
 
 int checkWin(Cell player) {
     // Check horizontal, vertical and diagonal for winning condition
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
+    for (int i = 0; i < WINDOW_HEIGHT; i++) {
+        for (int j = 0; j < WINDOW_WIDTH; j++) {
             if (board[i][j] == player) {
                 // Check horizontal
-                if (j <= width - WINNING_LENGTH && 
+                if (j <= WINDOW_WIDTH - WINNING_LENGTH && 
                     board[i][j + 1] == player && 
                     board[i][j + 2] == player && 
                     board[i][j + 3] == player && 
                     board[i][j + 4] == player) return 1;
                 
                 // Check vertical
-                if (i <= height - WINNING_LENGTH && 
+                if (i <= WINDOW_HEIGHT - WINNING_LENGTH && 
                     board[i + 1][j] == player && 
                     board[i + 2][j] == player && 
                     board[i + 3][j] == player && 
                     board[i + 4][j] == player) return 1;
 
                 // Check diagonal 
-                if (i <= height - WINNING_LENGTH && j <= width - WINNING_LENGTH &&
+                if (i <= WINDOW_HEIGHT - WINNING_LENGTH && j <= WINDOW_WIDTH - WINNING_LENGTH &&
                     board[i + 1][j + 1] == player && 
                     board[i + 2][j + 2] == player && 
                     board[i + 3][j + 3] == player && 
                     board[i + 4][j + 4] == player) return 1;
 
                 // Check diagonal /
-                if (i >= WINNING_LENGTH - 1 && j <= width - WINNING_LENGTH &&
+                if (i >= WINNING_LENGTH - 1 && j <= WINDOW_WIDTH - WINNING_LENGTH &&
                     board[i - 1][j + 1] == player && 
                     board[i - 2][j + 2] == player && 
                     board[i - 3][j + 3] == player && 
@@ -171,7 +170,7 @@ int checkWin(Cell player) {
 void aiMove() {
     int x, y;
     do {
-        x = rand() % height;
+        x = rand() % WINDOW_HEIGHT;
         y = rand() % width;
     } while (board[x][y] != EMPTY);
     
