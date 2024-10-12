@@ -200,17 +200,16 @@ int main(int argc, char* argv[]) {
                         snprintf(message, sizeof(message), "It's a draw!");
                         gameOver = 1;
                     } else {
-                            currentPlayer = PLAYER_O;
-                            aiMove();
-                            if (checkWin(PLAYER_O)) {
-                                snprintf(message, sizeof(message), "Player O wins!");
-                                gameOver = 1;
-                            } else if (checkDraw()) {
-                                snprintf(message, sizeof(message), "It's a draw!");
-                                gameOver = 1;
-                            }
-                            currentPlayer = PLAYER_X;
+                        currentPlayer = PLAYER_O;
+                        aiMove();
+                        if (checkWin(PLAYER_O)) {
+                            snprintf(message, sizeof(message), "Player O wins!");
+                            gameOver = 1;
+                        } else if (checkDraw()) {
+                            snprintf(message, sizeof(message), "It's a draw!");
+                            gameOver = 1;
                         }
+                        currentPlayer = PLAYER_X;
                     }
                 } else {
                     // Проверяем нажатие кнопок в диалоговом окне
