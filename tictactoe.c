@@ -19,12 +19,14 @@ Cell board[MAX_SIZE][MAX_SIZE];
 int cameraX = 0; // Положение камеры по X
 int cameraY = 0; // Положение камеры по Y
 
+
 // Функция инициализации игрового поля, заполняет все клетки значением EMPTY
 void initBoard() {
     for (int i = 0; i < MAX_SIZE; i++)
         for (int j = 0; j < MAX_SIZE; j++)
             board[i][j] = EMPTY;
 }
+
 
 // Функция отображения текста на экране с использованием SDL_ttf
 void renderText(SDL_Renderer* renderer, const char* message, int x, int y, SDL_Color color) {
@@ -44,6 +46,7 @@ void renderText(SDL_Renderer* renderer, const char* message, int x, int y, SDL_C
     SDL_DestroyTexture(texture);
     TTF_CloseFont(font);
 }
+
 
 // Функция для отображения сообщения в диалоговом окне с кнопками "Закрыть" и "Снова"
 void drawMessageBox(SDL_Renderer* renderer, const char* message) {
@@ -71,10 +74,12 @@ void drawMessageBox(SDL_Renderer* renderer, const char* message) {
     renderText(renderer, "Retry", retryButton.x + 10, retryButton.y + 10, textColor);
 }
 
+
 // Проверка, был ли клик внутри прямоугольника
 int isClickInsideRect(SDL_Rect rect, int x, int y) {
     return (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h);
 }
+
 
 // Функция проверки ничьей - проверяет, заполнены ли все клетки
 int checkDraw() {
@@ -87,6 +92,7 @@ int checkDraw() {
     }
     return 1; // Все клетки заполнены, ничья.
 }
+
 
 // Функция отрисовки видимой части игрового поля с учетом камеры
 void drawBoard(SDL_Renderer* renderer) {
@@ -120,6 +126,7 @@ void drawBoard(SDL_Renderer* renderer) {
         }
     }
 }
+
 
 // Функция проверки победы - проверяет горизонтальные, вертикальные и диагональные линии
 int checkWin(Cell player) {
@@ -159,6 +166,48 @@ int checkWin(Cell player) {
     return 0;
 }
 
+
+// Функция для проверки, может ли текущий игрок выиграть в следующем ходе
+int canWin(int x, int y, char player) {
+    // Проверка в 8 направлениях (горизонтально, вертикально и по диагоналям)
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            if (dx == 0 && dy == 0) continue; // Пропускаем саму клетку
+
+            int count = 1; // Считаем текущую клетку
+
+            // Считаем в одном направлении
+            for (int step = 1; step < 5; step++) {
+                int nx = x + dx * step;
+                int ny = y + dy * step;
+                if (nx >= 0 && nx < MAX_SIZE && ny >= 0 && ny < MAX_SIZE && board[ny][nx] == player) {
+                    count++;
+                } else {
+                    break;
+                }
+            }
+
+            // Считаем в противоположном направлении
+            for (int step = 1; step < 5; step++) {
+                int nx = x - dx * step;
+                int ny = y - dy * step;
+                if (nx >= 0 && nx < MAX_SIZE && ny >= 0 && ny < MAX_SIZE && board[ny][nx] == player) {
+                    count++;
+                } else {
+                    break;
+                }
+            }
+
+            // Если нашли 5 в ряд
+            if (count >= 5) {
+                return 1; // Можно выиграть
+            }
+        }
+    }
+    return 0; // Не может выиграть
+}
+
+
 // Функция для хода компьютера
 void aiMove() {
     int bestX = -1, bestY = -1;
@@ -195,11 +244,12 @@ void aiMove() {
         bestY = rand() % MAX_SIZE;
     } while (board[bestY][bestX] != EMPTY);
 
-move:
+    move:
     if (bestX != -1 && bestY != -1) {
         board[bestY][bestX] = PLAYER_O;
     }
-}
+}   
+
 
 int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
