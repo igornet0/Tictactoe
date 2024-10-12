@@ -166,24 +166,31 @@ int checkWin(Cell player) {
     return 0;
 }
 
+// Функция для оценки позиции
+int evaluatePosition(int x, int y, char player) {
+    int score = 0;
 
-// Функция для проверки, может ли текущий игрок выиграть в следующем ходе
-int canWin(int x, int y, char player) {
-    // Проверка в 8 направлениях (горизонтально, вертикально и по диагоналям)
+    // Проверка в 8 направлениях
     for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
-            if (dx == 0 && dy == 0) continue; // Пропускаем саму клетку
+            if (dx == 0 && dy == 0) continue;
 
             int count = 1; // Считаем текущую клетку
+            int openEnds = 0; // Считаем открытые концы
 
             // Считаем в одном направлении
             for (int step = 1; step < 5; step++) {
                 int nx = x + dx * step;
                 int ny = y + dy * step;
-                if (nx >= 0 && nx < MAX_SIZE && ny >= 0 && ny < MAX_SIZE && board[ny][nx] == player) {
-                    count++;
-                } else {
-                    break;
+                if (nx >= 0 && nx < MAX_SIZE && ny >= 0 && ny < MAX_SIZE) {
+                    if (board[ny][nx] == player) {
+                        count++;
+                    } else if (board[ny][nx] == EMPTY) {
+                        openEnds++;
+                        break; // Найдено открытое окончание
+                    } else {
+                        break; // Препятствие
+                    }
                 }
             }
 
@@ -191,65 +198,56 @@ int canWin(int x, int y, char player) {
             for (int step = 1; step < 5; step++) {
                 int nx = x - dx * step;
                 int ny = y - dy * step;
-                if (nx >= 0 && nx < MAX_SIZE && ny >= 0 && ny < MAX_SIZE && board[ny][nx] == player) {
-                    count++;
-                } else {
-                    break;
+                if (nx >= 0 && nx < MAX_SIZE && ny >= 0 && ny < MAX_SIZE) {
+                    if (board[ny][nx] == player) {
+                        count++;
+                    } else if (board[ny][nx] == EMPTY) {
+                        openEnds++;
+                        break; // Найдено открытое окончание
+                    } else {
+                        break; // Препятствие
+                    }
                 }
             }
 
-            // Если нашли 5 в ряд
+            // Оценка позиции на основе количества символов и открытых концов
             if (count >= 5) {
-                return 1; // Можно выиграть
+                return 1000; // Выигрышная позиция
+            } else if (count == 4 && openEnds > 0) {
+                score += 100; // Очень сильная позиция
+            } else if (count == 3 && openEnds > 0) {
+                score += 10; // Умеренная позиция
             }
         }
     }
-    return 0; // Не может выиграть
+
+    return score;
 }
 
-
-// Функция для хода компьютера
+// Основная функция для хода ИИ
 void aiMove() {
     int bestX = -1, bestY = -1;
+    int bestScore = -1;
 
-    // Сначала ищем возможность выиграть
+    // Оценка всех возможных ходов
     for (int i = 0; i < MAX_SIZE; i++) {
         for (int j = 0; j < MAX_SIZE; j++) {
             if (board[i][j] == EMPTY) {
-                if (canWin(j, i, PLAYER_O)) {
+                int score = evaluatePosition(j, i, PLAYER_O);
+                if (score > bestScore) {
+                    bestScore = score;
                     bestX = j;
                     bestY = i;
-                    goto move; // Найден победный ход
                 }
             }
         }
     }
 
-    // Затем блокируем игрока
-    for (int i = 0; i < MAX_SIZE; i++) {
-        for (int j = 0; j < MAX_SIZE; j++) {
-            if (board[i][j] == EMPTY) {
-                if (canWin(j, i, PLAYER_X)) {
-                    bestX = j;
-                    bestY = i;
-                    goto move; // Найден блокирующий ход
-                }
-            }
-        }
-    }
-
-    // Если не нашли ни того, ни другого, делаем случайный ход
-    do {
-        bestX = rand() % MAX_SIZE;
-        bestY = rand() % MAX_SIZE;
-    } while (board[bestY][bestX] != EMPTY);
-
-    move:
+    // Если лучший ход найден, делаем его
     if (bestX != -1 && bestY != -1) {
         board[bestY][bestX] = PLAYER_O;
     }
-}   
-
+}
 
 int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
