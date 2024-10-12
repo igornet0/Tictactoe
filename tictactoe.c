@@ -163,12 +163,13 @@ int checkWin(Cell player) {
 void aiMove() {
     // Переменные для хранения лучшего хода
     int bestX = -1, bestY = -1;
-    int maxAdjacent = -1;
+    int maxAdjacentX = -1;
+    int maxAdjacentO = -1;
 
     // Проходим по всему полю, чтобы найти наилучший ход
     for (int i = 0; i < MAX_SIZE; i++) {
         for (int j = 0; j < MAX_SIZE; j++) {
-            // Ищем пустую клетку, чтобы проверить, сколько рядом занятых клеток
+            // Ищем пустую клетку
             if (board[i][j] == EMPTY) {
                 int adjacentPlayerX = 0;
                 int adjacentPlayerO = 0;
@@ -191,13 +192,13 @@ void aiMove() {
                     }
                 }
 
-                // Оцениваем ход: если клетка рядом с игроком, это потенциальный лучший ход
-                if (adjacentPlayerX > maxAdjacent) {
-                    maxAdjacent = adjacentPlayerX;
+                // Оцениваем ход
+                if (adjacentPlayerX > maxAdjacentX) {
+                    maxAdjacentX = adjacentPlayerX;
                     bestX = j;
                     bestY = i;
-                } else if (adjacentPlayerX == maxAdjacent && adjacentPlayerO > 0) {
-                    // Если есть одинаковое количество соседних X, предпочитаем клетку рядом с O
+                } else if (adjacentPlayerX == maxAdjacentX && adjacentPlayerO < maxAdjacentO) {
+                    // Предпочитаем клетку, если она рядом с меньшим количеством O
                     bestX = j;
                     bestY = i;
                 }
@@ -209,7 +210,7 @@ void aiMove() {
     if (bestX != -1 && bestY != -1) {
         board[bestY][bestX] = PLAYER_O;
     } else {
-        // Если не нашли подходящий ход, делаем случайный (на случай ошибки или заполненности)
+        // Если не нашли подходящий ход, делаем случайный
         int x, y;
         do {
             x = rand() % MAX_SIZE;
