@@ -182,34 +182,39 @@ int main(int argc, char* argv[]) {
     int gameOver = 0;
     char message[50] = "";
 
-    while (running) {
+     while (running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) running = 0;
 
-            if (event.type == SDL_MOUSEBUTTONDOWN && !gameOver) {
-                int x = event.button.x / 50;
-                int y = event.button.y / 50;
+            if (event.type == SDL_MOUSEBUTTONDOWN) {
+                int mouseX = event.button.x;
+                int mouseY = event.button.y;
 
-                if (x < width && y < height && board[y][x] == EMPTY) {
-                    board[y][x] = PLAYER_X;
-                    if (checkWin(PLAYER_X)) {
-                        snprintf(message, sizeof(message), "Player X wins!");
-                        gameOver = 1;
-                    } else if (checkDraw()) {
-                        snprintf(message, sizeof(message), "It's a draw!");
-                        gameOver = 1;
-                    } else {
-                        currentPlayer = PLAYER_O;
-                        aiMove();
-                        if (checkWin(PLAYER_O)) {
-                            snprintf(message, sizeof(message), "Player O wins!");
+                if (!gameOver) {
+                    int x = mouseX / 50;
+                    int y = mouseY / 50;
+
+                    if (x < width && y < height && board[y][x] == EMPTY) {
+                        board[y][x] = PLAYER_X;
+                        if (checkWin(PLAYER_X)) {
+                            snprintf(message, sizeof(message), "Player X wins!");
                             gameOver = 1;
                         } else if (checkDraw()) {
-                            snprintf(message, sizeof(message), "It's a draw!");
-                            gameOver = 1;
+                                snprintf(message, sizeof(message), "It's a draw!");
+                                gameOver = 1;
+                        } else {
+                            currentPlayer = PLAYER_O;
+                            aiMove();
+                            if (checkWin(PLAYER_O)) {
+                                snprintf(message, sizeof(message), "Player O wins!");
+                                gameOver = 1;
+                            } else if (checkDraw()) {
+                                snprintf(message, sizeof(message), "It's a draw!");
+                                gameOver = 1;
+                            }
+                            currentPlayer = PLAYER_X;
                         }
-                        currentPlayer = PLAYER_X;
                     }
                 } else {
                     // Проверяем нажатие кнопок в диалоговом окне
