@@ -261,30 +261,73 @@ int main(int argc, char* argv[]) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = 0;
-            } else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT && !checkWin(PLAYER_X) && !checkWin(PLAYER_O)) {
-                int mouseX, mouseY;
-                SDL_GetMouseState(&mouseX, &mouseY);
-                
-                int gridX = (mouseX + cameraX) / CELL_SIZE;
-                int gridY = (mouseY + cameraY) / CELL_SIZE;
+            }
 
-                if (gridX >= 0 && gridX < MAX_SIZE && gridY >= 0 && gridY < MAX_SIZE && board[gridY][gridX] == EMPTY) {
-                    board[gridY][gridX] = PLAYER_X;
+            // Обработка стрелок для перемещения камеры
+            if (event.type == SDL_KEYDOWN) {
+                switch (event.key.keysym.sym) {
+                    case SDLK_UP:
+                    case SDLK_w: cameraY -= CELL_SIZE; break;
+                    case SDLK_DOWN:
+                    case SDLK_s: cameraY += CELL_SIZE; break;
+                    case SDLK_LEFT:
+                    case SDLK_a: cameraX -= CELL_SIZE; break;
+                    case SDLK_RIGHT:
+                    case SDLK_d: cameraX += CELL_SIZE; break;
+                }
+            }
 
-                    // Проверка на победу после хода игрока
-                    if (!checkWin(PLAYER_X)) {
-                        aiMove(); // Ход ИИ
+            // Обработка кликов мыши для размещения X или O
+            if (event.type == SDL_MOUSEBUTTONDOWN && !gameOver) {
+                int x = (event.button.x + cameraX) / CELL_SIZE;
+                int y = (event.button.y + cameraY) / CELL_SIZE;
+
+                if (board[y][x] == EMPTY) {
+                    board[y][x] = currentPlayer;
+
+                    // Проверка на победу и переключение игрока
+                    if (checkWin(currentPlayer)) {
+                        snprintf(message, sizeof(message), "Player %c wins!", currentPlayer == PLAYER_X ? 'X' : 'O');
+                        gameOver = 1;
+                    } else if (checkDraw()) {
+                        snprintf(message, sizeof(message), "It's a draw!");
+                        gameOver = 1;
+                    } else {
+                        currentPlayer = (currentPlayer == PLAYER_X) ? PLAYER_O : PLAYER_X;
+
+                        if (currentPlayer == PLAYER_O) {
+                            aiMove();
+                            if (checkWin(PLAYER_O)) {
+                                snprintf(message, sizeof(message), "Player O wins!");
+                                gameOver = 1;
+                            } else if (checkDraw()) {
+                                snprintf(message, sizeof(message), "It's a draw!");
+                                gameOver = 1;
+                            }
+                            currentPlayer = PLAYER_X;
+                        }
                     }
                 }
-            } else if (event.type == SDL_MOUSEWHEEL) { 
-                cameraX += event.wheel.x * CELL_SIZE / 2;
-                cameraY += event.wheel.y * CELL_SIZE / 2;
+            }
 
-                // Ограничение камеры в пределах поля
-                cameraX = fmax(0, fmin(cameraX, MAX_SIZE * CELL_SIZE - WINDOW_WIDTH));
-                cameraY = fmax(0, fmin(cameraY, MAX_SIZE * CELL_SIZE - WINDOW_HEIGHT));
+            // Обработка нажатий на кнопки "Закрыть" и "Снова" в диалоговом окне
+            if (gameOver && event.type == SDL_MOUSEBUTTONDOWN) {
+                int mouseX = event.button.x;
+                int mouseY = event.button.y;
+
+                SDL_Rect closeButton = {WINDOW_WIDTH / 4 + 10, WINDOW_HEIGHT / 3 + 70, 100, 40};
+                SDL_Rect retryButton = {WINDOW_WIDTH / 4 + WINDOW_WIDTH / 2 - 110, WINDOW_HEIGHT / 3 + 70, 100, 40};
+
+                if (isClickInsideRect(closeButton, mouseX, mouseY)) {
+                    running = 0; // Закрываем игру
+                } else if (isClickInsideRect(retryButton, mouseX, mouseY)) {
+                    initBoard(); // Сбросить поле
+                    gameOver = 0; // Сбросить состояние игры
+                    snprintf(message, sizeof(message), "");
+                }
             }
         }
+
         // Отрисовка игрового поля и сообщений
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
