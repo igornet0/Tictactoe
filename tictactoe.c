@@ -59,11 +59,11 @@ void drawMessageBox(SDL_Renderer* renderer, const char* message) {
 
     SDL_SetRenderDrawColor(renderer, 200, 0, 0, 255); // Красный цвет для кнопки "Закрыть"
     SDL_RenderFillRect(renderer, &closeButton);
-    renderText(renderer, "Закрыть", closeButton.x + 10, closeButton.y + 10, textColor);
+    renderText(renderer, "Close", closeButton.x + 10, closeButton.y + 10, textColor);
 
     SDL_SetRenderDrawColor(renderer, 0, 200, 0, 255); // Зеленый цвет для кнопки "Снова"
     SDL_RenderFillRect(renderer, &retryButton);
-    renderText(renderer, "Снова", retryButton.x + 10, retryButton.y + 10, textColor);
+    renderText(renderer, "Retry", retryButton.x + 10, retryButton.y + 10, textColor);
 }
 
 
