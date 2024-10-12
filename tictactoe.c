@@ -166,21 +166,6 @@ int checkWin(Cell player) {
     return 0;
 }
 
-int checkWin(char player) {
-    // Проверка всех выигрышных комбинаций
-    for (int i = 0; i < MAX_SIZE; i++) {
-        if ((board[i][0] == player && board[i][1] == player && board[i][2] == player) ||
-            (board[0][i] == player && board[1][i] == player && board[2][i] == player)) {
-            return 1;
-        }
-    }
-    if ((board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
-        (board[0][2] == player && board[1][1] == player && board[2][0] == player)) {
-        return 1;
-    }
-    return 0;
-}
-
 int minimax(int depth, int isMaximizing) {
     if (checkWin(PLAYER_O)) return 10 - depth; // Оценка для ИИ
     if (checkWin(PLAYER_X)) return depth - 10; // Оценка для игрока
