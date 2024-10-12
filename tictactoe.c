@@ -7,6 +7,7 @@
 #define CELL_SIZE 50
 #define WINDOW_WIDTH 600
 #define WINDOW_HEIGHT 700
+#define WINNING_LENGTH 5
 
 typedef enum { EMPTY, PLAYER_X, PLAYER_O } Cell;
 
@@ -171,7 +172,7 @@ void aiMove() {
     int x, y;
     do {
         x = rand() % WINDOW_HEIGHT;
-        y = rand() % width;
+        y = rand() % WINDOW_WIDTH;
     } while (board[x][y] != EMPTY);
     
     board[x][y] = PLAYER_O;
