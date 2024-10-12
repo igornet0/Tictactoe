@@ -4,13 +4,19 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define MAX_SIZE 20
-#define WINNING_LENGTH 5
+#define CELL_SIZE 50
+#define WINDOW_WIDTH 600
+#define WINDOW_HEIGHT 700
 
 typedef enum { EMPTY, PLAYER_X, PLAYER_O } Cell;
 
+// Используем статическое поле большого размера, так как "бесконечное" поле физически невозможно.
+// Однако мы будем использовать технику прокрутки с отображением только видимой части.
+#define MAX_SIZE 1000
 Cell board[MAX_SIZE][MAX_SIZE];
-int width, height;
+
+int cameraX = 0; // Положение камеры по X
+int cameraY = 0; // Положение камеры по Y
 
 void initBoard() {
     for (int i = 0; i < MAX_SIZE; i++)
@@ -85,28 +91,38 @@ int checkDraw() {
 }
 
 
+
 void drawBoard(SDL_Renderer* renderer) {
+    // Устанавливаем цвет линий сетки
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-    for (int i = 0; i <= width; i++) {
-        SDL_RenderDrawLine(renderer, i * 50, 0, i * 50, height * 50);
-    }
-    for (int i = 0; i <= height; i++) {
-        SDL_RenderDrawLine(renderer, 0, i * 50, width * 50, i * 50);
-    }
+    // Вычисляем видимые границы на экране
+    int startX = cameraX / CELL_SIZE;
+    int startY = cameraY / CELL_SIZE;
+    int endX = (cameraX + WINDOW_WIDTH) / CELL_SIZE + 1;
+    int endY = (cameraY + WINDOW_HEIGHT) / CELL_SIZE + 1;
 
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
+    // Рисуем видимые клетки поля
+    for (int i = startY; i <= endY; i++) {
+        for (int j = startX; j <= endX; j++) {
+            int x = j * CELL_SIZE - cameraX;
+            int y = i * CELL_SIZE - cameraY;
+
+            // Рисуем границы клетки
+            SDL_Rect cellRect = { x, y, CELL_SIZE, CELL_SIZE };
+            SDL_RenderDrawRect(renderer, &cellRect);
+
+            // Рисуем X и O в клетках
             if (board[i][j] == PLAYER_X) {
                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-                SDL_RenderDrawLine(renderer, j * 50 + 10, i * 50 + 10, j * 50 + 40, i * 50 + 40);
-                SDL_RenderDrawLine(renderer, j * 50 + 40, i * 50 + 10, j * 50 + 10, i * 50 + 40);
+                SDL_RenderDrawLine(renderer, x + 10, y + 10, x + CELL_SIZE - 10, y + CELL_SIZE - 10);
+                SDL_RenderDrawLine(renderer, x + CELL_SIZE - 10, y + 10, x + 10, y + CELL_SIZE - 10);
             } else if (board[i][j] == PLAYER_O) {
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
                 for (int angle = 0; angle < 360; angle++) {
-                    int x = 20 * cos(angle * M_PI / 180) + j * 50 + 25;
-                    int y = 20 * sin(angle * M_PI / 180) + i * 50 + 25;
-                    SDL_RenderDrawPoint(renderer, x, y);
+                    int drawX = 20 * cos(angle * M_PI / 180) + x + CELL_SIZE / 2;
+                    int drawY = 20 * sin(angle * M_PI / 180) + y + CELL_SIZE / 2;
+                    SDL_RenderDrawPoint(renderer, drawX, drawY);
                 }
             }
         }
@@ -163,87 +179,55 @@ void aiMove() {
 }
 
 int main(int argc, char* argv[]) {
-    printf("Enter width and height of the board (max %d): ", MAX_SIZE);
-    scanf("%d %d", &width, &height);
-    if (width > MAX_SIZE || height > MAX_SIZE || width < 1 || height < 1) {
-        printf("Invalid size!\n");
-        return -1;
-    }
-
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init(); // Инициализация TTF для отображения текста
-    SDL_Window* window = SDL_CreateWindow("Tic Tac Toe", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width * 50, height * 50, SDL_WINDOW_SHOWN);
+    SDL_Window* window = SDL_CreateWindow("Infinite Tic Tac Toe", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     initBoard();
     
     int running = 1;
     Cell currentPlayer = PLAYER_X;
-    int gameOver = 0;
-    char message[50] = "";
 
-     while (running) {
+    while (running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) running = 0;
 
+            // Обработка стрелок для перемещения камеры
+            if (event.type == SDL_KEYDOWN) {
+                switch (event.key.keysym.sym) {
+                    case SDLK_UP:
+                    case SDLK_w: cameraY -= CELL_SIZE; break;
+                    case SDLK_DOWN:
+                    case SDLK_s: cameraY += CELL_SIZE; break;
+                    case SDLK_LEFT:
+                    case SDLK_a: cameraX -= CELL_SIZE; break;
+                    case SDLK_RIGHT:
+                    case SDLK_d: cameraX += CELL_SIZE; break;
+                }
+            }
+
+            // Обработка кликов мыши для размещения X или O
             if (event.type == SDL_MOUSEBUTTONDOWN) {
-                int mouseX = event.button.x;
-                int mouseY = event.button.y;
+                int x = (event.button.x + cameraX) / CELL_SIZE;
+                int y = (event.button.y + cameraY) / CELL_SIZE;
 
-                if (!gameOver) {
-                    int x = mouseX / 50;
-                    int y = mouseY / 50;
-
-                    if (x < width && y < height && board[y][x] == EMPTY) {
-                        board[y][x] = PLAYER_X;
-                        if (checkWin(PLAYER_X)) {
-                            snprintf(message, sizeof(message), "Player X wins!");
-                            gameOver = 1;
-                        } else if (checkDraw()) {
-                                snprintf(message, sizeof(message), "It's a draw!");
-                                gameOver = 1;
-                        } else {
-                            currentPlayer = PLAYER_O;
-                            aiMove();
-                            if (checkWin(PLAYER_O)) {
-                                snprintf(message, sizeof(message), "Player O wins!");
-                                gameOver = 1;
-                            } else if (checkDraw()) {
-                                snprintf(message, sizeof(message), "It's a draw!");
-                                gameOver = 1;
-                            }
-                            currentPlayer = PLAYER_X;
-                        }
-                    }
-                } else {
-                    // Проверяем нажатие кнопок в диалоговом окне
-                    SDL_Rect closeButton = {width * 50 / 4 + 10, height * 50 / 3 + 70, 100, 40};
-                    SDL_Rect retryButton = {width * 50 / 4 + width * 50 / 2 - 110, height * 50 / 3 + 70, 100, 40};
-
-                    if (isClickInsideRect(closeButton, mouseX, mouseY)) {
-                        running = 0; // Закрываем игру
-                    } else if (isClickInsideRect(retryButton, mouseX, mouseY)) {
-                        initBoard(); // Сбросить поле
-                        gameOver = 0; // Сбросить состояние игры
-                        snprintf(message, sizeof(message), "");
-                    }
+                if (board[y][x] == EMPTY) {
+                    board[y][x] = currentPlayer;
+                    currentPlayer = (currentPlayer == PLAYER_X) ? PLAYER_O : PLAYER_X;
                 }
             }
         }
 
+        // Отрисовка
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
         
         drawBoard(renderer);
 
-        if (gameOver) {
-            drawMessageBox(renderer, message);
-        }
-
         SDL_RenderPresent(renderer);
     }
-
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     TTF_Quit();
