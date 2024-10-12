@@ -37,6 +37,41 @@ void renderText(SDL_Renderer* renderer, const char* message, int x, int y, SDL_C
     TTF_CloseFont(font);
 }
 
+void drawMessageBox(SDL_Renderer* renderer, const char* message) {
+    SDL_Color bgColor = {255, 255, 255, 255}; // Белый фон окна
+    SDL_Color textColor = {0, 0, 0, 255}; // Черный цвет текста
+
+    // Устанавливаем цвет и рисуем прямоугольник в центре экрана
+    SDL_SetRenderDrawColor(renderer, bgColor.r, bgColor.g, bgColor.b, bgColor.a);
+    SDL_Rect messageRect = {width * 50 / 4, height * 50 / 3, width * 50 / 2, 150};
+    SDL_RenderFillRect(renderer, &messageRect);
+
+    // Рисуем рамку вокруг прямоугольника
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderDrawRect(renderer, &messageRect);
+
+    // Отрисовываем текст в центре прямоугольника
+    renderText(renderer, message, messageRect.x + 10, messageRect.y + 20, textColor);
+
+    // Рисуем кнопки "Закрыть" и "Снова"
+    SDL_Rect closeButton = {messageRect.x + 10, messageRect.y + 70, 100, 40};
+    SDL_Rect retryButton = {messageRect.x + messageRect.w - 110, messageRect.y + 70, 100, 40};
+
+    SDL_SetRenderDrawColor(renderer, 200, 0, 0, 255); // Красный цвет для кнопки "Закрыть"
+    SDL_RenderFillRect(renderer, &closeButton);
+    renderText(renderer, "Закрыть", closeButton.x + 10, closeButton.y + 10, textColor);
+
+    SDL_SetRenderDrawColor(renderer, 0, 200, 0, 255); // Зеленый цвет для кнопки "Снова"
+    SDL_RenderFillRect(renderer, &retryButton);
+    renderText(renderer, "Снова", retryButton.x + 10, retryButton.y + 10, textColor);
+}
+
+
+// Проверка, был ли клик внутри прямоугольника
+int isClickInsideRect(SDL_Rect rect, int x, int y) {
+    return (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h);
+}
+
 
 int checkDraw() {
     for (int i = 0; i < height; i++) {
@@ -165,22 +200,31 @@ int main(int argc, char* argv[]) {
                         snprintf(message, sizeof(message), "It's a draw!");
                         gameOver = 1;
                     } else {
-                        currentPlayer = PLAYER_O;
-                        aiMove();
-                        if (checkWin(PLAYER_O)) {
-                            snprintf(message, sizeof(message), "Player O wins!");
-                            gameOver = 1;
-                        } else if (checkDraw()) {
-                            snprintf(message, sizeof(message), "It's a draw!");
-                            gameOver = 1;
+                            currentPlayer = PLAYER_O;
+                            aiMove();
+                            if (checkWin(PLAYER_O)) {
+                                snprintf(message, sizeof(message), "Player O wins!");
+                                gameOver = 1;
+                            } else if (checkDraw()) {
+                                snprintf(message, sizeof(message), "It's a draw!");
+                                gameOver = 1;
+                            }
+                            currentPlayer = PLAYER_X;
                         }
-                        currentPlayer = PLAYER_X;
+                    }
+                } else {
+                    // Проверяем нажатие кнопок в диалоговом окне
+                    SDL_Rect closeButton = {width * 50 / 4 + 10, height * 50 / 3 + 70, 100, 40};
+                    SDL_Rect retryButton = {width * 50 / 4 + width * 50 / 2 - 110, height * 50 / 3 + 70, 100, 40};
+
+                    if (isClickInsideRect(closeButton, mouseX, mouseY)) {
+                        running = 0; // Закрываем игру
+                    } else if (isClickInsideRect(retryButton, mouseX, mouseY)) {
+                        initBoard(); // Сбросить поле
+                        gameOver = 0; // Сбросить состояние игры
+                        snprintf(message, sizeof(message), "");
                     }
                 }
-            }
-
-            if (gameOver && (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_KEYDOWN)) {
-                running = 0; // Закрываем игру при нажатии клавиши или клике
             }
         }
 
@@ -190,8 +234,7 @@ int main(int argc, char* argv[]) {
         drawBoard(renderer);
 
         if (gameOver) {
-            SDL_Color color = {0, 0, 0, 255}; // Черный цвет текста
-            renderText(renderer, message, 10, height * 50 / 2 - 20, color);
+            drawMessageBox(renderer, message);
         }
 
         SDL_RenderPresent(renderer);
