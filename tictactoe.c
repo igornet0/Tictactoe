@@ -170,8 +170,8 @@ int minimax(int depth, int isMaximizing) {
     if (checkWin(PLAYER_O)) return 10 - depth; // Оценка для ИИ
     if (checkWin(PLAYER_X)) return depth - 10; // Оценка для игрока
     int isDraw = 1;
-    for (int i = 0; i < MAX_SIZE; i++) {
-        for (int j = 0; j < MAX_SIZE; j++) {
+    for (int i = 0; i < WINNING_LENGTH; i++) {
+        for (int j = 0; j < WINNING_LENGTH; j++) {
             if (board[i][j] == EMPTY) {
                 isDraw = 0;
                 break;
@@ -182,8 +182,8 @@ int minimax(int depth, int isMaximizing) {
 
     if (isMaximizing) {
         int bestScore = -1000;
-        for (int i = 0; i < MAX_SIZE; i++) {
-            for (int j = 0; j < MAX_SIZE; j++) {
+        for (int i = 0; i < WINNING_LENGTH; i++) {
+            for (int j = 0; j < WINNING_LENGTH; j++) {
                 if (board[i][j] == EMPTY) {
                     board[i][j] = PLAYER_O;
                     int score = minimax(depth + 1, 0);
@@ -195,8 +195,8 @@ int minimax(int depth, int isMaximizing) {
         return bestScore;
     } else {
         int bestScore = 1000;
-        for (int i = 0; i < MAX_SIZE; i++) {
-            for (int j = 0; j < MAX_SIZE; j++) {
+        for (int i = 0; i < WINNING_LENGTH; i++) {
+            for (int j = 0; j < WINNING_LENGTH; j++) {
                 if (board[i][j] == EMPTY) {
                     board[i][j] = PLAYER_X;
                     int score = minimax(depth + 1, 1);
