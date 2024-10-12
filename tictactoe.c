@@ -132,54 +132,85 @@ void drawBoard(SDL_Renderer* renderer) {
 int checkWin(Cell player) {
     // Проверка всех выигрышных комбинаций
     for (int i = 0; i < MAX_SIZE; i++) {
-        if ((board[i][0] == player && board[i][1] == player && board[i][2] == player) ||
-            (board[0][i] == player && board[1][i] == player && board[2][i] == player)) {
-            return 1;
+        for (int j = 0; j <= MAX_SIZE - WINNING_LENGTH; j++) {
+            // Горизонтальная проверка
+            if (board[i][j] == player) {
+                int count = 0;
+                for (int k = 0; k < WINNING_LENGTH; k++) {
+                    if (board[i][j + k] == player) count++;
+                }
+                if (count == WINNING_LENGTH) return 1;
+            }
         }
     }
-    if ((board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
-        (board[0][2] == player && board[1][1] == player && board[2][0] == player)) {
-        return 1;
+
+    for (int i = 0; i <= MAX_SIZE - WINNING_LENGTH; i++) {
+        for (int j = 0; j < MAX_SIZE; j++) {
+            // Вертикальная проверка
+            if (board[i][j] == player) {
+                int count = 0;
+                for (int k = 0; k < WINNING_LENGTH; k++) {
+                    if (board[i + k][j] == player) count++;
+                }
+                if (count == WINNING_LENGTH) return 1;
+            }
+        }
     }
+
+    for (int i = 0; i <= MAX_SIZE - WINNING_LENGTH; i++) {
+        for (int j = 0; j <= MAX_SIZE - WINNING_LENGTH; j++) {
+            // Диагональная проверка
+            if (board[i][j] == player) {
+                int count1 = 0, count2 = 0;
+                for (int k = 0; k < WINNING_LENGTH; k++) {
+                    if (board[i + k][j + k] == player) count1++;
+                    if (board[i + k][j + WINNING_LENGTH - 1 - k] == player) count2++;
+                }
+                if (count1 == WINNING_LENGTH || count2 == WINNING_LENGTH) return 1;
+            }
+        }
+    }
+
     return 0;
 }
 
 int minimax(int depth, int isMaximizing) {
-    if (checkWin(PLAYER_O)) return 10 - depth; // Оценка для ИИ
-    if (checkWin(PLAYER_X)) return depth - 10; // Оценка для игрока
+    if (checkWin(PLAYER_O)) return 10 - depth;
+    if (checkWin(PLAYER_X)) return depth - 10;
+
     int isDraw = 1;
-    for (int i = 0; i < WINNING_LENGTH; i++) {
-        for (int j = 0; j < WINNING_LENGTH; j++) {
+    for (int i = 0; i < MAX_SIZE; i++) {
+        for (int j = 0; j < MAX_SIZE; j++) {
             if (board[i][j] == EMPTY) {
                 isDraw = 0;
                 break;
             }
         }
     }
-    if (isDraw) return 0; // Ничья
+    if (isDraw) return 0;
 
     if (isMaximizing) {
         int bestScore = -1000;
-        for (int i = 0; i < WINNING_LENGTH; i++) {
-            for (int j = 0; j < WINNING_LENGTH; j++) {
+        for (int i = 0; i < MAX_SIZE; i++) {
+            for (int j = 0; j < MAX_SIZE; j++) {
                 if (board[i][j] == EMPTY) {
                     board[i][j] = PLAYER_O;
                     int score = minimax(depth + 1, 0);
                     board[i][j] = EMPTY;
-                    bestScore = (score > bestScore) ? score : bestScore;
+                    bestScore = fmax(score, bestScore);
                 }
             }
         }
         return bestScore;
     } else {
         int bestScore = 1000;
-        for (int i = 0; i < WINNING_LENGTH; i++) {
-            for (int j = 0; j < WINNING_LENGTH; j++) {
+        for (int i = 0; i < MAX_SIZE; i++) {
+            for (int j = 0; j < MAX_SIZE; j++) {
                 if (board[i][j] == EMPTY) {
                     board[i][j] = PLAYER_X;
                     int score = minimax(depth + 1, 1);
                     board[i][j] = EMPTY;
-                    bestScore = (score < bestScore) ? score : bestScore;
+                    bestScore = fmin(score, bestScore);
                 }
             }
         }
@@ -187,6 +218,7 @@ int minimax(int depth, int isMaximizing) {
     }
 }
 
+// Функция хода компьютера
 void aiMove() {
     int bestX = -1, bestY = -1;
     int bestScore = -1000;
@@ -229,73 +261,30 @@ int main(int argc, char* argv[]) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = 0;
-            }
+            } else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT && !checkWin(PLAYER_X) && !checkWin(PLAYER_O)) {
+                int mouseX, mouseY;
+                SDL_GetMouseState(&mouseX, &mouseY);
+                
+                int gridX = (mouseX + cameraX) / CELL_SIZE;
+                int gridY = (mouseY + cameraY) / CELL_SIZE;
 
-            // Обработка стрелок для перемещения камеры
-            if (event.type == SDL_KEYDOWN) {
-                switch (event.key.keysym.sym) {
-                    case SDLK_UP:
-                    case SDLK_w: cameraY -= CELL_SIZE; break;
-                    case SDLK_DOWN:
-                    case SDLK_s: cameraY += CELL_SIZE; break;
-                    case SDLK_LEFT:
-                    case SDLK_a: cameraX -= CELL_SIZE; break;
-                    case SDLK_RIGHT:
-                    case SDLK_d: cameraX += CELL_SIZE; break;
-                }
-            }
+                if (gridX >= 0 && gridX < MAX_SIZE && gridY >= 0 && gridY < MAX_SIZE && board[gridY][gridX] == EMPTY) {
+                    board[gridY][gridX] = PLAYER_X;
 
-            // Обработка кликов мыши для размещения X или O
-            if (event.type == SDL_MOUSEBUTTONDOWN && !gameOver) {
-                int x = (event.button.x + cameraX) / CELL_SIZE;
-                int y = (event.button.y + cameraY) / CELL_SIZE;
-
-                if (board[y][x] == EMPTY) {
-                    board[y][x] = currentPlayer;
-
-                    // Проверка на победу и переключение игрока
-                    if (checkWin(currentPlayer)) {
-                        snprintf(message, sizeof(message), "Player %c wins!", currentPlayer == PLAYER_X ? 'X' : 'O');
-                        gameOver = 1;
-                    } else if (checkDraw()) {
-                        snprintf(message, sizeof(message), "It's a draw!");
-                        gameOver = 1;
-                    } else {
-                        currentPlayer = (currentPlayer == PLAYER_X) ? PLAYER_O : PLAYER_X;
-
-                        if (currentPlayer == PLAYER_O) {
-                            aiMove();
-                            if (checkWin(PLAYER_O)) {
-                                snprintf(message, sizeof(message), "Player O wins!");
-                                gameOver = 1;
-                            } else if (checkDraw()) {
-                                snprintf(message, sizeof(message), "It's a draw!");
-                                gameOver = 1;
-                            }
-                            currentPlayer = PLAYER_X;
-                        }
+                    // Проверка на победу после хода игрока
+                    if (!checkWin(PLAYER_X)) {
+                        aiMove(); // Ход ИИ
                     }
                 }
-            }
+            } else if (event.type == SDL_MOUSEWHEEL) { 
+                cameraX += event.wheel.x * CELL_SIZE / 2;
+                cameraY += event.wheel.y * CELL_SIZE / 2;
 
-            // Обработка нажатий на кнопки "Закрыть" и "Снова" в диалоговом окне
-            if (gameOver && event.type == SDL_MOUSEBUTTONDOWN) {
-                int mouseX = event.button.x;
-                int mouseY = event.button.y;
-
-                SDL_Rect closeButton = {WINDOW_WIDTH / 4 + 10, WINDOW_HEIGHT / 3 + 70, 100, 40};
-                SDL_Rect retryButton = {WINDOW_WIDTH / 4 + WINDOW_WIDTH / 2 - 110, WINDOW_HEIGHT / 3 + 70, 100, 40};
-
-                if (isClickInsideRect(closeButton, mouseX, mouseY)) {
-                    running = 0; // Закрываем игру
-                } else if (isClickInsideRect(retryButton, mouseX, mouseY)) {
-                    initBoard(); // Сбросить поле
-                    gameOver = 0; // Сбросить состояние игры
-                    snprintf(message, sizeof(message), "");
-                }
+                // Ограничение камеры в пределах поля
+                cameraX = fmax(0, fmin(cameraX, MAX_SIZE * CELL_SIZE - WINDOW_WIDTH));
+                cameraY = fmax(0, fmin(cameraY, MAX_SIZE * CELL_SIZE - WINDOW_HEIGHT));
             }
         }
-
         // Отрисовка игрового поля и сообщений
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
