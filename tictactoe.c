@@ -130,38 +130,16 @@ void drawBoard(SDL_Renderer* renderer) {
 
 // Функция проверки победы - проверяет горизонтальные, вертикальные и диагональные линии
 int checkWin(Cell player) {
+    // Проверка всех выигрышных комбинаций
     for (int i = 0; i < MAX_SIZE; i++) {
-        for (int j = 0; j < MAX_SIZE; j++) {
-            if (board[i][j] == player) {
-                // Проверка горизонтали
-                if (j <= MAX_SIZE - WINNING_LENGTH &&
-                    board[i][j + 1] == player && 
-                    board[i][j + 2] == player && 
-                    board[i][j + 3] == player && 
-                    board[i][j + 4] == player) return 1;
-                
-                // Проверка вертикали
-                if (i <= MAX_SIZE - WINNING_LENGTH &&
-                    board[i + 1][j] == player && 
-                    board[i + 2][j] == player && 
-                    board[i + 3][j] == player && 
-                    board[i + 4][j] == player) return 1;
-
-                // Проверка диагонали 
-                if (i <= MAX_SIZE - WINNING_LENGTH && j <= MAX_SIZE - WINNING_LENGTH &&
-                    board[i + 1][j + 1] == player && 
-                    board[i + 2][j + 2] == player && 
-                    board[i + 3][j + 3] == player && 
-                    board[i + 4][j + 4] == player) return 1;
-
-                // Проверка диагонали 
-                if (i >= WINNING_LENGTH - 1 && j <= MAX_SIZE - WINNING_LENGTH &&
-                    board[i - 1][j + 1] == player && 
-                    board[i - 2][j + 2] == player && 
-                    board[i - 3][j + 3] == player && 
-                    board[i - 4][j + 4] == player) return 1;
-            }
+        if ((board[i][0] == player && board[i][1] == player && board[i][2] == player) ||
+            (board[0][i] == player && board[1][i] == player && board[2][i] == player)) {
+            return 1;
         }
+    }
+    if ((board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
+        (board[0][2] == player && board[1][1] == player && board[2][0] == player)) {
+        return 1;
     }
     return 0;
 }
