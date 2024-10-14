@@ -153,14 +153,17 @@ int checkWin(Cell player, int lastX, int lastY) {
     return 0;
 }
 
-// Функция для хода ИИ, блокирующая игрока и реагирующая на последний ход.
+// Функция для хода компьютера, блокирующая игрока и реагирующая на последний ход.
 void aiMove(int lastPlayerX, int lastPlayerY) {
     int blockX = -1, blockY = -1;
+    int searchRadius = 2; // Радиус поиска вокруг последнего хода игрока.
 
-    // Поиск угроз от игрока.
-    for (int i = 0; i < MAX_SIZE; i++) {
-        for (int j = 0; j < MAX_SIZE; j++) {
-            if (board[i][j] == EMPTY) {
+    // Поиск угроз от игрока в ограниченной области вокруг последнего хода.
+    for (int i = lastPlayerY - searchRadius; i <= lastPlayerY + searchRadius; i++) {
+        for (int j = lastPlayerX - searchRadius; j <= lastPlayerX + searchRadius; j++) {
+            // Проверяем, что координаты находятся в пределах поля и клетка пуста.
+            if (i >= 0 && i < MAX_SIZE && j >= 0 && j < MAX_SIZE && board[i][j] == EMPTY) {
+                // Проверяем, если бы игрок поставил "X" в эту клетку, это привело бы к победе?
                 board[i][j] = PLAYER_X;
                 if (checkWin(PLAYER_X, j, i)) {
                     blockX = j;
