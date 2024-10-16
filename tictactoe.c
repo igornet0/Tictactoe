@@ -12,7 +12,7 @@
 typedef enum { EMPTY, PLAYER_X, PLAYER_O } Cell;
 
 // Устанавливаем максимально возможный размер игрового поля
-#define MAX_SIZE 9223372036854775807
+#define MAX_SIZE 1000
 Cell board[MAX_SIZE][MAX_SIZE];
 
 int cameraX = 0; // Координаты камеры по X
